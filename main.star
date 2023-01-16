@@ -5,6 +5,7 @@ load("http.star", "http")
 load("time.star", "time")
 load("cache.star", "cache")
 load("animation.star", "animation")
+load("random.star", "random")
 
 
 # API_URL = "https://tennisapi1.p.rapidapi.com/api/tennis/events/"
@@ -14,7 +15,7 @@ CACHE_TTL = 43200 # half a day
 
 def main(config):
 	app_frames = []
-	app_frames.extend(animated_transition())
+#	app_frames.extend(animated_transition())
 	app_frames.extend(match_frames())
 	return render.Root(child = render.Animation(children = app_frames))
 
@@ -25,9 +26,10 @@ def match_frames():
 			children = [
 				render.Column(
 					children=[
-						render.Text(content = match['tournament'], font = "tom-thumb"),
-						render.Text(content = match['player_1']['name'], font = "tom-thumb"),
-						render.Text(content = match['player_2']['name'], font = "tom-thumb"),
+						tournament_widget(match['tournament']),
+						player_widget(match['player_1']),
+						player_widget(match['player_2']),
+						details_widget(match),
 					],
 				)
 			]
@@ -36,9 +38,50 @@ def match_frames():
 		keyframes = []
 	) for i in range(120)]
 
+def player_widget(player):
+	return render.Row(
+		children=[
+			render.Box(width=2, height=5, padding=2, color=player['colors']['primary']),
+			render.Box(width=2, height=5, padding=2, color=player['colors']['secondary']),
+			render.Text(content=player['name'], font="tom-thumb"),
+     ],
+)
+
+def tournament_widget(tournament):
+	icon_url = "https://user-images.githubusercontent.com/244265/212588299-954c3f65-1502-4f07-9a10-bf515930fbb1.png"
+	return render.Row(
+		cross_align="center",
+		main_align="center",
+		children=[
+			render.Image(
+				src = http.get(icon_url).body(),
+				height = 9,
+				width = 9,
+			),
+			render.Marquee(
+				width=54,
+				height=9,
+				child=render.Text(content=tournament.upper(), font="CG-pixel-4x5-mono", color="#8cff00"),
+				offset_start=0,
+				offset_end=32,
+			)
+		]
+	)
+
+def details_widget(match):
+	return render.Row(
+		children=[
+			render.Text(content=str(match["date"]), font="tom-thumb"),
+			render.Text(content=match["round"], font="tom-thumb"),
+		]
+	)
+
+
 def get_random_match():
 	matches = fetch_matches_for('matches.json')
-	filtered_match = filter_match_info(matches[0])
+	random_number = random.number(0, 100)
+	filtered_match = filter_match_info(matches[random_number])
+	print(filtered_match)
 	return filtered_match
 
 
