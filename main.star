@@ -74,7 +74,7 @@ def tournament_widget(tournament, round):
 					width=54,
 					height=9,
 					child=render.Text(content=tournament.upper() + " - " + round, font="CG-pixel-4x5-mono", color="#8cff00"),
-					offset_start=0,
+					offset_start=40,
 					offset_end=32,
 				)
 			]
@@ -99,14 +99,14 @@ def details_widget(match):
 
 
 def get_random_match():
-	matches = fetch_matches_for('matches.json')
+	matches = fetch_matches_for('matches.json') # TODO point to the right api and pass the right date
 	random_number = random.number(0, 100) # TODO: random to consider all the matches
 	filtered_match = filter_match_info(matches[random_number])
 	return filtered_match
 
 
 def fetch_matches_for(date):
-	cached_matches = cache.get("tennis_matches_" + date)
+	cached_matches = cache.get("tennis_" + date)
 	if cached_matches: 
 		matches = json.decode(cached_matches)
 	else: 
@@ -115,13 +115,22 @@ def fetch_matches_for(date):
 			fail("Request failed with status %d", req.status_code)
 		response = req.json()
 		matches = response['events']
-	cache.set("tennis_matches_" + date, json.encode(matches), ttl_seconds=CACHE_TTL)
+	cache.set("tennis_" + date, json.encode(matches), ttl_seconds=CACHE_TTL)
 
 	return matches
 
 
 def filter_match_info(match):
-	if match['tournament']['uniqueTournament']['slug'] == 'australian-open': 
+	#TODO flag colors are all equal, randomizing it a bit
+	colors = match['homeTeam']['teamColors']
+	match['homeTeam']['teamColors']['primary'] = colors['primary'] if colors['primary'] != colors['secondary'] else '#' + str(random.number(100000, 999999))
+	match['homeTeam']['teamColors']['secondary'] = colors['secondary'] if colors['primary'] != colors['secondary'] else '#' + str(random.number(100000, 999999))
+
+	colors = match['awayTeam']['teamColors']
+	match['awayTeam']['teamColors']['primary'] = colors['primary'] if colors['primary'] != colors['secondary'] else '#' + str(random.number(100000, 999999))
+	match['awayTeam']['teamColors']['secondary'] = colors['secondary'] if colors['primary'] != colors['secondary'] else '#' + str(random.number(100000, 999999))
+
+	if match['tournament']['uniqueTournament']['slug'] == 'australian-open': # TODO accept other tournaments
 		match_filtered = {
 			'tournament': match['tournament']['uniqueTournament']['name'],
 			'round': match['roundInfo']['name'],
